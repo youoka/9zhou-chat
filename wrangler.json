@@ -4,8 +4,8 @@
   "name": "9zhou-chat",
   "migrations": [
     {
-      "new_sqlite_classes": ["Chat"],
-      "tag": "v1"
+      "new_sqlite_classes": ["Chat", "SessionTracker"],
+      "tag": "v2"
     }
   ],
   "assets": {
@@ -21,6 +21,10 @@
       {
         "class_name": "Chat",
         "name": "Chat"
+      },
+      {
+        "class_name": "SessionTracker",
+        "name": "SessionTracker"
       }
     ]
   },
