@@ -7,6 +7,9 @@ import {
 
 import type { ChatMessage, Message } from "../shared";
 
+// Keep track of all active sessions
+const activeSessions = new Map<string, {createdAt: number}>();
+
 export class Chat extends Server<Env> {
   static options = { hibernate: true };
 
@@ -17,26 +20,36 @@ export class Chat extends Server<Env> {
   }
 
   onStart() {
-    // this is where you can initialize things that need to be done before the server starts
-    // for example, load previous messages from a database or a service
+    // Add this room to the active sessions list
+    const room = this.ctx.id.name;
+    // Only track rooms with valid names
+    if (room) {
+      activeSessions.set(room, {createdAt: Date.now()});
+      console.log("Room started:", room);
+      console.log("Active sessions:", Array.from(activeSessions.keys()));
+    }
+  }
 
-    // create the messages table if it doesn't exist
-    this.ctx.storage.sql.exec(
-      `CREATE TABLE IF NOT EXISTS messages (id TEXT PRIMARY KEY, user TEXT, role TEXT, content TEXT)`,
-    );
-
-    // load the messages from the database
-    this.messages = this.ctx.storage.sql
-      .exec(`SELECT * FROM messages`)
-      .toArray() as ChatMessage[];
+  onClose() {
+    // Remove this room from the active sessions list
+    const room = this.ctx.id.name;
+    if (room) {
+      activeSessions.delete(room);
+      console.log("Room closed:", room);
+      console.log("Active sessions:", Array.from(activeSessions.keys()));
+    }
   }
 
   onConnect(connection: Connection) {
+    const room = this.ctx.id.name;
+    if (room) {
+      console.log("Client connected to room:", room);
+    }
     connection.send(
       JSON.stringify({
         type: "all",
         messages: this.messages,
-      } satisfies Message),
+      } satisfies Message)
     );
   }
 
@@ -58,10 +71,10 @@ export class Chat extends Server<Env> {
       `INSERT INTO messages (id, user, role, content) VALUES ('${
         message.id
       }', '${message.user}', '${message.role}', ${JSON.stringify(
-        message.content,
+        message.content
       )}) ON CONFLICT (id) DO UPDATE SET content = ${JSON.stringify(
-        message.content,
-      )}`,
+        message.content
+      )}`
     );
   }
 
@@ -77,8 +90,21 @@ export class Chat extends Server<Env> {
   }
 }
 
+// Export the active sessions for the admin dashboard
+export function getActiveSessions() {
+  return Array.from(activeSessions.keys());
+}
+
 export default {
   async fetch(request, env) {
+    // Handle request for active sessions
+    const url = new URL(request.url);
+    if (url.pathname === "/api/sessions") {
+      return new Response(JSON.stringify(getActiveSessions()), {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+    
     return (
       (await routePartykitRequest(request, { ...env })) ||
       env.ASSETS.fetch(request)

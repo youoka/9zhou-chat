@@ -73,9 +73,12 @@ function App() {
   return (
     <div className="chat container">
       {messages.map((message) => (
-        <div key={message.id} className="row message">
+        <div 
+          key={message.id} 
+          className={`row message ${message.user === name ? 'own-message' : ''}`}
+        >
           <div className="two columns user">{message.user}</div>
-          <div className="ten columns">{message.content}</div>
+          <div className="ten columns content">{message.content}</div>
         </div>
       ))}
       <form

@@ -23,10 +23,24 @@ html {
 
 .message {
   margin-bottom: 10px;
+  display: flex;
+}
+
+.message.own-message {
+  flex-direction: row-reverse;
 }
 
 .message .user {
   font-weight: bold;
+  min-width: 80px;
+  padding: 0 10px;
+}
+
+.message .content {
+  flex: 1;
+}
+
+.message.own-message .content {
   text-align: right;
 }
 
